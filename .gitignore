@@ -54,4 +54,5 @@ notebooks/
 
 # Generated outputs
 url_test.txt
+urls.txt
 *.zip

@@ -11,7 +11,10 @@ REQUEST_DELAY = 2.0
 DEFAULT_TIMEOUT = 20
 
 _session = requests.Session()
-_session.headers["User-Agent"] = "..."
+_session.headers["User-Agent"] = (
+    "UPA-scraper/0.1 (VUT FIT student project; contact info: "
+    + "xrepcim00@stud.fit.vutbr.cz, xvesela00@stud.fit.vutbr.cz)"
+)
 _retry = Retry(
     total=3,
     backoff_factor=1,
@@ -26,7 +29,6 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     stream=sys.stderr,
 )
-log = logging.getLogger()
 
 
 def fetch(url: str) -> str:
