@@ -1,7 +1,8 @@
 .DEFAULT_GOAL := help
 
 ZIP_NAME     ?= submission.zip
-SUBMIT_FILES := urls.txt data.tsv get_urls.py scraper.py build.sh run.sh README.md requirements.txt
+REQUIRED     := urls.txt data.tsv src/get_urls.py src/scraper.py build.sh run.sh README.md requirements.txt
+SUBMIT_FILES  = $(sort $(REQUIRED) $(wildcard src/*.py))
 
 .PHONY: help setup lint format typecheck requirements build run zip clean
 
@@ -16,11 +17,12 @@ lint: ## Check formatting and lint rules
 	uv run ruff check .
 	uv run ruff format --check .
 
-format: ## Auto-format code
+format: ## Auto-fix lint errors and format code
+	uv run ruff check --fix .
 	uv run ruff format .
 
 typecheck: ## Run mypy
-	uv run mypy .
+	uv run mypy src
 
 # --- Build and Run ---
 requirements: ## Export requirements.txt from uv.lock
@@ -34,7 +36,7 @@ run: ## Run run.sh (collect URLs, scrape first 10)
 
 # --- Submission ---
 zip: requirements ## Build the submission archive ($(ZIP_NAME))
-	@for f in $(SUBMIT_FILES); do \
+	@for f in $(REQUIRED); do \
 		[ -f "$$f" ] || { echo "Missing required file: $$f" >&2; exit 1; }; \
 	done
 	@rm -f $(ZIP_NAME)

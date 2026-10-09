@@ -5,8 +5,8 @@ set -eu
 cd "$(dirname "$0")"
 
 PY=.venv/bin/python
-URLS_SCRIPT=get_urls.py
-SCRAPER_SCRIPT=scraper.py
+URLS_SCRIPT=src/get_urls.py
+SCRAPER_SCRIPT=src/scraper.py
 URLS_FILE=url_test.txt
 
 if [ ! -x "$PY" ]; then
