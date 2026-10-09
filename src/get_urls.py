@@ -1,7 +1,9 @@
 import logging
-from common import BASE_URL, fetch
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+from bs4 import BeautifulSoup
+
+from common import BASE_URL, fetch
 
 logger = logging.getLogger(__name__)
 
@@ -10,10 +12,12 @@ LIMIT = 200
 
 
 def page_url(page: int) -> str:
+    """Return the category listing url for the given page number."""
     return f"{CATEGORY_URL}?p={page}"
 
 
 def parse_listing(html: str) -> list[str]:
+    """Parse listing HTML, return unique absolute product urls in page order."""
     soup = BeautifulSoup(html, "lxml")
     if (slot := soup.select_one("#bottomslot")) is not None:
         slot.decompose()
@@ -29,6 +33,7 @@ def parse_listing(html: str) -> list[str]:
 
 
 def main() -> None:
+    """Walk listing pages until LIMIT urls are collected, print them to stdout."""
     seen: dict[str, None] = {}
     page_number = 1
     while len(seen) < LIMIT:
@@ -40,7 +45,7 @@ def main() -> None:
         seen.update(dict.fromkeys(new))
         page_number += 1
 
-    logger.info(f"Fetched {len(seen)} urls.")
+    logger.info(f"Fetched {len(seen)} urls")
     for url in list(seen)[:LIMIT]:
         print(url)
 
