@@ -51,3 +51,7 @@ notebooks/
 
 # Agent worktrees
 .claude/worktrees/
+
+# Generated outputs
+url_test.txt
+*.zip
