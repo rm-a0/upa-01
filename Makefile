@@ -4,7 +4,7 @@ ZIP_NAME     ?= submission.zip
 REQUIRED     := urls.txt data.tsv src/get_urls.py src/scraper.py build.sh run.sh README.md requirements.txt
 SUBMIT_FILES  = $(sort $(REQUIRED) $(wildcard src/*.py))
 
-.PHONY: help setup lint format typecheck requirements build run zip clean
+.PHONY: help setup lint format typecheck requirements build urls data run zip clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -31,7 +31,13 @@ requirements: ## Export requirements.txt from uv.lock
 build: ## Run build.sh (venv + pip, as on merlin)
 	./build.sh
 
-run: ## Run run.sh (collect URLs, scrape first 10)
+urls: build ## Collect the product URL sample into urls.txt
+	.venv/bin/python src/get_urls.py > urls.txt
+
+data: build urls ## Scrape every URL in urls.txt into data.tsv
+	.venv/bin/python src/scraper.py < urls.txt > data.tsv
+
+run: build ## Run run.sh (collect URLs, scrape first 10)
 	./run.sh
 
 # --- Submission ---
