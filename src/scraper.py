@@ -6,7 +6,6 @@ from collections.abc import Iterable
 from typing import Any
 
 from bs4 import BeautifulSoup
-from requests import RequestException
 
 from common import fetch
 
@@ -24,7 +23,7 @@ PARAMETERS = (
 
 def clean(value: str) -> str:
     """Keep one TSV-safe, human-readable value."""
-    return re.sub(r"\s+", " ", value).strip().replace("\t", " ")
+    return re.sub(r"\s+,", ",", re.sub(r"\s+", " ", value)).strip()
 
 
 def json_values(value: Any) -> Iterable[dict[str, Any]]:
@@ -121,36 +120,6 @@ def specification_pairs(soup: BeautifulSoup) -> dict[str, str]:
                 columns[1].get_text(" "),
             )
 
-    for row in soup.select("tr"):
-        cells = row.find_all(["th", "td"])
-        if len(cells) >= 2:
-            add_pair(pairs, cells[0].get_text(" "), cells[1].get_text(" "))
-
-    for label in soup.select("dt"):
-        value = label.find_next_sibling("dd")
-        if value:
-            add_pair(pairs, label.get_text(" "), value.get_text(" "))
-
-    # The site also renders specifications as adjacent label/value blocks.
-    wanted = {parameter.casefold() for parameter in PARAMETERS}
-    for element in soup.find_all(string=True):
-        text = clean(str(element))
-        if text.casefold().rstrip(":") not in wanted:
-            continue
-        parent = element.parent
-        container = parent.parent if parent is not None else None
-        if container is None:
-            continue
-        siblings = [
-            clean(child.get_text(" ")) for child in container.find_all(recursive=False)
-        ]
-        try:
-            position = siblings.index(text)
-        except ValueError:
-            continue
-        if position + 1 < len(siblings):
-            add_pair(pairs, text, siblings[position + 1])
-
     return pairs
 
 
@@ -173,10 +142,13 @@ def main() -> None:
         processed += 1
         logger.info(f"Product {processed}: {url}")
         try:
-            print("\t".join(parse_product(fetch(url), url)), flush=True)
+            row = parse_product(fetch(url), url)
             scraped += 1
-        except (RequestException, ValueError) as error:
+        except Exception as error:  # noqa: BLE001 - one bad page must not stop the run
+            # Keep one row per input URL even when the page cannot be scraped.
             logger.error("Could not scrape %s: %s", url, error)
+            row = [url] + [""] * (2 + len(PARAMETERS))
+        print("\t".join(row), flush=True)
     logger.info(f"Scraped {scraped} of {processed} products")
 
 

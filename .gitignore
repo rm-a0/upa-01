@@ -54,6 +54,6 @@ notebooks/
 
 # Generated outputs
 url_test.txt
-urls.txt
-data.tsv
 *.zip
+*.tsv
+*.txt

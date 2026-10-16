@@ -46,7 +46,8 @@ zip: requirements ## Build the submission archive ($(ZIP_NAME))
 		[ -f "$$f" ] || { echo "Missing required file: $$f" >&2; exit 1; }; \
 	done
 	@rm -f $(ZIP_NAME)
-	python3 -m zipfile -c $(ZIP_NAME) $(SUBMIT_FILES)
+	@# Not "python3 -m zipfile -c": it drops directories (src/ would be flattened).
+	python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(ZIP_NAME) $(SUBMIT_FILES)
 	@python3 -m zipfile -l $(ZIP_NAME)
 
 clean: ## Remove caches and build artifacts

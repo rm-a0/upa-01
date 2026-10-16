@@ -2,7 +2,7 @@
 
 ## Team
 
-- Team: UPA project 1
+- Team: xrepcim00
 - Solvers: xrepcim00, xvesela00
 
 ## E-shop
@@ -49,29 +49,41 @@ embedded structured data or specification markup.
 
 There is no header row. Every row has these columns, in order:
 
-1. Product URL
-2. Product name
-3. Current selling price
-4. Brand
-5. Colour
-6. Length
-7. Weight
-8. Material
-9. Maximum light intensity
+| # | Column | Example |
+|---|---|---|
+| 1 | Product URL | `https://www.knivesandtools.com/en/pt/-fenix-c7-...htm` |
+| 2 | Product name | `Fenix C7 rechargeable flashlight, 3000 lumens, orange` |
+| 3 | Current selling price (EUR, without currency symbol) | `79.95` |
+| 4 | Brand | `Fenix` |
+| 5 | Colour | `orange` |
+| 6 | Length | `14.9 cm` |
+| 7 | Weight | `172 g` |
+| 8 | Material | `aluminum` |
+| 9 | Maximum light intensity | `3,000 lumens` |
 
 All values remain strings as displayed by the shop. If a product does not list a
-parameter, the corresponding field is empty.
+parameter, the corresponding field is empty. If a product page cannot be
+downloaded, its row contains only the URL and empty fields.
+
+Notes:
+
+- The price comes from the page's embedded JSON-LD (`offers.price`) and is the
+  current price, including discounts.
+- Colour and Material can contain several comma-separated values, e.g.
+  `aluminum, carbon fiber, composite`.
 
 ## robots.txt and request precautions
 
-The analyzed `robots.txt` allows all paths for the default user agent except
-`/cart`, `/checkout`, `/account`, and paths matching `/*/compare`. The
-implementation requests only the selected category and product pages, waits two
-seconds between requests, uses a descriptive User-Agent, performs no parallel
-crawling, and retries only temporary server errors. The current command-line
-environment can receive a Cloudflare 403 response even though the pages are
-available in a browser; sample datasets should therefore be generated from an
-execution environment with permitted access.
+`robots.txt` allows all paths for the default user agent except `/cart`,
+`/checkout`, `/account` and `/*/compare`. Measures taken:
+
+- only the category listing (`/en/ct/flashlights.htm?p=N`) and product pages
+  (`/en/pt/*.htm`) are requested, both allowed
+- a 2 s delay before every request (no `Crawl-delay` is set, we add one anyway)
+- one sequential connection, no parallel requests
+- a descriptive User-Agent with contact e-mails
+- retries only for temporary errors (429, 5xx), with backoff
+- the URL collector stops as soon as it has 200 URLs or a page adds nothing new
 
 ## Test run
 

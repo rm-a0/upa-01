@@ -45,7 +45,7 @@ def main() -> None:
         seen.update(dict.fromkeys(new))
         page_number += 1
 
-    logger.info(f"Fetched {len(seen)} urls")
+    logger.info(f"Collected {len(seen)} urls, printing {min(len(seen), LIMIT)}")
     for url in list(seen)[:LIMIT]:
         print(url)
 
