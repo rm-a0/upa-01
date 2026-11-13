@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-ZIP_NAME     ?= submission.zip
+ZIP_NAME     ?= xrepcim00.zip
 REQUIRED     := urls.txt data.tsv src/get_urls.py src/scraper.py build.sh run.sh README.md requirements.txt
 SUBMIT_FILES  = $(sort $(REQUIRED) $(wildcard src/*.py))
 
