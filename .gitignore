@@ -29,7 +29,6 @@ dist/
 *.ckpt
 *.log
 *.pth
-*.csv
 
 # IDE/editor files
 .vscode/
@@ -55,5 +54,7 @@ notebooks/
 # Generated outputs
 url_test.txt
 *.zip
-*.tsv
 *.txt
+
+# Jupyter
+.ipynb_checkpoints/
