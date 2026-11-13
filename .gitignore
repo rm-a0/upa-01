@@ -53,8 +53,10 @@ notebooks/
 
 # Generated outputs
 url_test.txt
+data.tsv
 *.zip
 *.txt
+*.tsv
 
 # Jupyter
 .ipynb_checkpoints/
