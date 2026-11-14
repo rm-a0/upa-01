@@ -6,12 +6,13 @@ REQUIRED     := urls.txt data.tsv src/get_urls.py src/scraper.py build.sh run.sh
 SUBMIT_FILES  = $(sort $(REQUIRED) $(wildcard src/*.py))
 
 PART2_REQUIRED := README.md requirements.txt pyproject.toml Makefile data.tsv \
-                  analysis/load.py analysis/eda.ipynb analysis/prep.ipynb \
+                  analysis/load.py analysis/export_figures.py \
+                  analysis/eda.ipynb analysis/prep.ipynb \
                   analysis/data_categorical.csv analysis/data_numeric.csv \
                   docs/documentation.pdf docs/documentation.tex
 PART2_FILES = $(sort $(PART2_REQUIRED) $(wildcard docs/figures/*.png))
 
-.PHONY: help setup lint format typecheck requirements build urls data run zip zip2 docs clean
+.PHONY: help setup lint format typecheck requirements build urls data run zip zip2 figures report docs clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -56,6 +57,13 @@ zip: requirements ## Build the submission archive ($(ZIP_NAME))
 	@# Not "python3 -m zipfile -c": it drops directories (src/ would be flattened).
 	python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(ZIP_NAME) $(SUBMIT_FILES)
 	@python3 -m zipfile -l $(ZIP_NAME)
+
+figures: ## Re-run the EDA notebook and export its figures
+	uv run python -m ipykernel install --user --name upa-venv --display-name "UPA project venv"
+	uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=upa-venv analysis/eda.ipynb
+	uv run python analysis/export_figures.py
+
+report: figures docs ## Rebuild the figures and the documentation PDF
 
 docs: ## Build the project-2 documentation PDF
 	cd docs && pdflatex -interaction=nonstopmode -halt-on-error documentation.tex

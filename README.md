@@ -144,11 +144,19 @@ uv run python -m ipykernel install --user --name upa-venv --display-name "UPA pr
 uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=upa-venv analysis/eda.ipynb analysis/prep.ipynb
 ```
 
-The documentation PDF can be rebuilt from source with:
+The documentation PDF can be rebuilt with:
 
 ```sh
-cd docs && pdflatex documentation.tex && pdflatex documentation.tex
+make docs
 ```
+
+If the EDA plots changed, refresh the figures from `eda.ipynb` first:
+
+```sh
+make figures
+```
+
+`make report` runs both steps (`figures` and `docs`).
 
 The submission archive is built with `make zip2`. It contains the analysis
 source, both prepared CSVs, the documentation PDF and `data.tsv`.
