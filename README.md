@@ -1,4 +1,4 @@
-# UPA Project 1
+# UPA Projects 1 and 2
 
 ## Team
 
@@ -93,3 +93,59 @@ Notes:
 
 This writes the collected URLs to `url_test.txt` and sends the first ten
 scraped rows to standard output.
+
+## Project 2: exploratory analysis and data preparation
+
+The second part of the project uses the dataset from `data.tsv` and prepares two
+variants for price prediction. The source code is in `analysis/`:
+
+| File | Purpose |
+|---|---|
+| `analysis/load.py` | Shared loader; parses `data.tsv` into a typed dataframe |
+| `analysis/eda.ipynb` | Exploratory analysis, outliers, missing values, correlations |
+| `analysis/prep.ipynb` | Creates the two prepared datasets |
+| `analysis/data_categorical.csv` | Variant A: all attributes categorical (price classes) |
+| `analysis/data_numeric.csv` | Variant B: all attributes numeric in `[0, 1]` (price regression) |
+| `docs/documentation.pdf` | Project documentation with the required figures and tables |
+
+The mining task is supervised **price prediction**. Variant A turns price into
+three quantile-based classes (`low`, `mid`, `high`) and discretizes the numeric
+predictors. Variant B keeps price numeric, applies `log1p` to the numeric
+predictors, one-hot encodes the categorical attributes and normalizes all
+columns to `[0, 1]`. The identifier columns `url` and `name` and the nearly
+constant `colour` attribute are dropped; `material` is kept.
+
+Outliers are detected and documented but not removed or capped because they are
+valid premium/large products. Variant A's quantile bins and variant B's log
+transformation limit their influence.
+
+### Running the analysis
+
+The analysis dependencies are included in `requirements.txt` and
+`pyproject.toml`. With `uv`, install the environment with:
+
+```sh
+uv sync
+```
+
+Then open the notebooks in `analysis/` in Jupyter and run them in order:
+`eda.ipynb` first, then `prep.ipynb`. The preparation notebook writes the two
+CSV files into `analysis/`.
+
+Alternatively, execute the notebooks from the command line with `nbconvert`.
+The first command registers the project environment as a Jupyter kernel, so the
+notebooks use exactly the dependencies installed by `uv`:
+
+```sh
+uv run python -m ipykernel install --user --name upa-venv --display-name "UPA project venv"
+uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=upa-venv analysis/eda.ipynb analysis/prep.ipynb
+```
+
+The documentation PDF can be rebuilt from source with:
+
+```sh
+cd docs && pdflatex documentation.tex && pdflatex documentation.tex
+```
+
+The submission archive is built with `make zip2`. It contains the analysis
+source, both prepared CSVs, the documentation PDF and `data.tsv`.

@@ -1,10 +1,17 @@
 .DEFAULT_GOAL := help
 
 ZIP_NAME     ?= xrepcim00.zip
+PART2_ZIP    ?= xrepcim00_part2.zip
 REQUIRED     := urls.txt data.tsv src/get_urls.py src/scraper.py build.sh run.sh README.md requirements.txt
 SUBMIT_FILES  = $(sort $(REQUIRED) $(wildcard src/*.py))
 
-.PHONY: help setup lint format typecheck requirements build urls data run zip clean
+PART2_REQUIRED := README.md requirements.txt pyproject.toml Makefile data.tsv \
+                  analysis/load.py analysis/eda.ipynb analysis/prep.ipynb \
+                  analysis/data_categorical.csv analysis/data_numeric.csv \
+                  docs/documentation.pdf docs/documentation.tex
+PART2_FILES = $(sort $(PART2_REQUIRED) $(wildcard docs/figures/*.png))
+
+.PHONY: help setup lint format typecheck requirements build urls data run zip zip2 docs clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -50,6 +57,18 @@ zip: requirements ## Build the submission archive ($(ZIP_NAME))
 	python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(ZIP_NAME) $(SUBMIT_FILES)
 	@python3 -m zipfile -l $(ZIP_NAME)
 
+docs: ## Build the project-2 documentation PDF
+	cd docs && pdflatex -interaction=nonstopmode -halt-on-error documentation.tex
+	cd docs && pdflatex -interaction=nonstopmode -halt-on-error documentation.tex
+
+zip2: requirements ## Build the project-2 archive ($(PART2_ZIP))
+	@for f in $(PART2_REQUIRED); do \
+		[ -f "$$f" ] || { echo "Missing required file: $$f" >&2; exit 1; }; \
+	done
+	@rm -f $(PART2_ZIP)
+	@python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(PART2_ZIP) $(PART2_FILES)
+	@python3 -m zipfile -l $(PART2_ZIP)
+
 clean: ## Remove caches and build artifacts
-	rm -rf .pytest_cache .ruff_cache .mypy_cache dist build url_test.txt $(ZIP_NAME)
+	rm -rf .pytest_cache .ruff_cache .mypy_cache dist build url_test.txt $(ZIP_NAME) $(PART2_ZIP)
 	find . -type d -name __pycache__ -exec rm -rf {} +
