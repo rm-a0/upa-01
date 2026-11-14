@@ -113,7 +113,10 @@ three quantile-based classes (`low`, `mid`, `high`) and discretizes the numeric
 predictors. Variant B keeps price numeric, applies `log1p` to the numeric
 predictors, one-hot encodes the categorical attributes and normalizes all
 columns to `[0, 1]`. The identifier columns `url` and `name` and the nearly
-constant `colour` attribute are dropped; `material` is kept.
+constant `colour` attribute are dropped; `material` is kept. Both variants also
+contain a binary `bundle` flag derived from the product name. It marks kits,
+packs, holsters, cables, battery systems and listings with attachments without
+removing those rows.
 
 Outliers are detected and documented but not removed or capped because they are
 valid premium/large products. Variant A's quantile bins and variant B's log

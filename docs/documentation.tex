@@ -40,10 +40,10 @@ colour, length, weight, material and maximum light intensity in lumens.
 
 All values were originally stored as strings. The analysis loader converts
 length, weight, price and lumens to numbers, splits colour and material into
-lists, and derives three binary flags from the product name:
-\texttt{rechargeable}, \texttt{tactical} and \texttt{edc}. The resulting
-dataframe has 200 rows and 12 columns (the nine raw attributes plus the three
-derived flags).
+lists, and derives four binary flags from the product name:
+\texttt{rechargeable}, \texttt{tactical}, \texttt{edc} and \texttt{bundle}.
+The resulting dataframe has 200 rows and 13 columns (the nine raw attributes
+plus the four derived flags).
 
 The selected mining task is supervised \textbf{price prediction}. Two prepared
 datasets are created: one for algorithms that require categorical inputs
@@ -78,6 +78,7 @@ lumens & numeric & 197 & 74 \\
 rechargeable & binary & 200 & 2 \\
 tactical & binary & 200 & 2 \\
 edc & binary & 200 & 2 \\
+bundle & binary & 200 & 2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,8 +121,10 @@ and composite (5) are less frequent. A product can list more than one colour or
 material, the counts above count every mentioned value.
 
 The derived flags are also informative: 106 products are rechargeable, 37 are
-described as tactical and 35 as EDC (everyday carry). These flags are binary and
-are treated as ordinal attributes in the correlation analysis.
+described as tactical, 35 as EDC (everyday carry) and 8 are bundle/accessory
+listings. These flags are binary and are included as features in both prepared
+variants. The bundle flag marks kits, packs, holsters, cables, battery systems
+and listings with attachments, it does not remove those products.
 
 \section{Exploratory analysis}
 
@@ -330,13 +333,15 @@ requirements:
 \end{itemize}
 
 The attributes \texttt{url} and \texttt{name} are identifiers and are removed.
-The three flags derived from the name are kept because they describe product
-type. \texttt{colour} is dropped because it is almost constant: 155 of the 200
-products list black as a colour, so the attribute carries little information
-for this sample. \texttt{material} is retained. It can contain several comma-separated
-values, the first listed value is used as the primary value, and rare
-categories (fewer than five products) are grouped into \texttt{other}. This
-simplification keeps the table compact while preserving the most important
+The four flags derived from the name are kept because they describe product
+type, in particular, the \texttt{bundle} flag marks kits, packs, holsters,
+cables, battery systems and listings with attachments. \texttt{colour}
+is dropped because it is almost constant: 155 of the 200 products list
+black as a colour, so the attribute carries little information for this sample.
+\texttt{material} is retained. It can contain several
+comma-separated values, the first listed value is used as the primary value,
+and rare categories (fewer than five products) are grouped into \texttt{other}.
+This simplification keeps the table compact while preserving the most important
 materials.
 
 \subsection{Missing-value handling}
@@ -393,11 +398,11 @@ Variant A uses the following steps:
 Quantile discretization was chosen because it produces approximately balanced
 classes and is robust to the remaining skew. The resulting price classes contain
 67 low, 66 mid and 67 high products. The output file is
-\texttt{data\_categorical.csv} with 200 rows and 9 columns:
+\texttt{data\_categorical.csv} with 200 rows and 10 columns:
 \texttt{price}, \texttt{brand}, \texttt{length\_cm}, \texttt{weight\_g},
-\texttt{material}, \texttt{lumens}, \texttt{rechargeable}, \texttt{tactical} and
-\texttt{edc}. All columns are categorical, so the file is suitable for
-algorithms that require categorical inputs.
+\texttt{material}, \texttt{lumens}, \texttt{rechargeable}, \texttt{tactical},
+\texttt{edc} and \texttt{bundle}. All columns are categorical, so the file is
+suitable for algorithms that require categorical inputs.
 
 \subsection{Variant B: numeric dataset}
 
@@ -419,10 +424,10 @@ numeric attributes more suitable for distance-based and linear methods.
 One-hot encoding is appropriate because brand and material are nominal.
 Min--max normalization was chosen because the assignment requires values in
 \([0,1]\) (or \([-1,1]\)), all resulting values are in \([0,1]\). The output file
-is \texttt{data\_numeric.csv} with 200 rows and 19 columns: the scaled target,
-three numeric predictors, three binary flags, seven brand columns and five
+is \texttt{data\_numeric.csv} with 200 rows and 20 columns: the scaled target,
+three numeric predictors, four binary flags, seven brand columns and five
 material columns\footnote{The exact column count depends on the categories
-present after grouping, the current file has 19 columns.}. There are no missing
+present after grouping, the current file has 20 columns.}. There are no missing
 values. To interpret a prediction in EUR, the inverse min--max scaling and the
 inverse of \(\log(1+x)\) must be applied.
 
@@ -441,8 +446,8 @@ included in the submission.
 \toprule
 File & Task & Rows $\times$ columns & Value types \\
 \midrule
-\texttt{data\_categorical.csv} & price classification & \(200 \times 9\) & categorical \\
-\texttt{data\_numeric.csv} & price regression & \(200 \times 19\) & numeric in \([0,1]\) \\
+\texttt{data\_categorical.csv} & price classification & \(200 \times 10\) & categorical \\
+\texttt{data\_numeric.csv} & price regression & \(200 \times 20\) & numeric in \([0,1]\) \\
 \bottomrule
 \end{tabular}
 \end{table}

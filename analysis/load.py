@@ -6,7 +6,7 @@ Columns:
     brand                        category
     colour, material             list[str], NaN when missing
     length_cm, weight_g, lumens  float, NaN when missing
-    rechargeable, tactical, edc  bool, keyword found in the product name
+    rechargeable, tactical, edc, bundle  bool, keyword found in the product name
 """
 
 from pathlib import Path
@@ -28,7 +28,7 @@ COLUMNS = [
 ]
 NUMERIC = ["price", "length_cm", "weight_g", "lumens"]
 MULTI_VALUE = ["colour", "material"]
-FLAGS = ["rechargeable", "tactical", "edc"]
+FLAGS = ["rechargeable", "tactical", "edc", "bundle"]
 
 UNITS = {"length_cm": "cm", "weight_g": "g", "lumens": "lumens"}
 
@@ -60,4 +60,7 @@ def load(path: Path = DATA_TSV) -> pd.DataFrame:
     df["rechargeable"] = name.str.contains("rechargeable")
     df["tactical"] = name.str.contains("tactical")
     df["edc"] = name.str.contains(r"\bedc")
+    df["bundle"] = name.str.contains(
+        r"\b(?:battery|kit|pack|holster|cable|attachments?)\b"
+    )
     return df
