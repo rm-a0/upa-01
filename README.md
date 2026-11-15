@@ -124,39 +124,26 @@ transformation limit their influence.
 
 ### Running the analysis
 
-The analysis dependencies are included in `requirements.txt` and
-`pyproject.toml`. With `uv`, install the environment with:
+Install the environment and run both notebooks (`eda.ipynb`, then
+`prep.ipynb`), which writes the two CSVs into `analysis/`:
 
 ```sh
 uv sync
+make notebooks
 ```
 
-Then open the notebooks in `analysis/` in Jupyter and run them in order:
-`eda.ipynb` first, then `prep.ipynb`. The preparation notebook writes the two
-CSV files into `analysis/`.
-
-Alternatively, execute the notebooks from the command line with `nbconvert`.
-The first command registers the project environment as a Jupyter kernel, so the
-notebooks use exactly the dependencies installed by `uv`:
+Rebuild the figures and the documentation PDF with:
 
 ```sh
-uv run python -m ipykernel install --user --name upa-venv --display-name "UPA project venv"
-uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=upa-venv analysis/eda.ipynb analysis/prep.ipynb
+make report
 ```
 
-The documentation PDF can be rebuilt with:
+## Submission
+
+Build the archive for part 1 or part 2 with:
 
 ```sh
-make docs
+make zip1
+make zip2
 ```
 
-If the EDA plots changed, refresh the figures from `eda.ipynb` first:
-
-```sh
-make figures
-```
-
-`make report` runs both steps (`figures` and `docs`).
-
-The submission archive is built with `make zip2`. It contains the analysis
-source, both prepared CSVs, the documentation PDF and `data.tsv`.

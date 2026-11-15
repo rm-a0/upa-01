@@ -1,82 +1,82 @@
 .DEFAULT_GOAL := help
 
-ZIP_NAME     ?= xrepcim00.zip
-PART2_ZIP    ?= xrepcim00_part2.zip
-REQUIRED     := urls.txt data.tsv src/get_urls.py src/scraper.py build.sh run.sh README.md requirements.txt
-SUBMIT_FILES  = $(sort $(REQUIRED) $(wildcard src/*.py))
+# Submission archive, override with: make zip2 ZIP=other.zip
+ZIP ?= xrepcim00.zip
 
-PART2_REQUIRED := README.md requirements.txt pyproject.toml Makefile data.tsv \
-                  analysis/load.py analysis/export_figures.py \
-                  analysis/eda.ipynb analysis/prep.ipynb \
-                  analysis/data_categorical.csv analysis/data_numeric.csv \
-                  docs/documentation.pdf docs/documentation.tex
-PART2_FILES = $(sort $(PART2_REQUIRED) $(wildcard docs/figures/*.png))
+PART1 := README.md requirements.txt build.sh run.sh \
+         urls.txt data.tsv $(wildcard src/*.py)
 
-.PHONY: help setup lint format typecheck requirements build urls data run zip zip2 figures report docs clean
+PART2 := README.md Makefile requirements.txt pyproject.toml data.tsv \
+         $(wildcard analysis/*.py) $(wildcard analysis/*.ipynb) \
+         analysis/data_categorical.csv analysis/data_numeric.csv \
+         docs/documentation.pdf docs/documentation.tex \
+         $(wildcard docs/figures/*.png)
+
+.PHONY: help setup lint format typecheck requirements \
+        build urls data run notebooks figures docs report zip1 zip2 clean
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-setup: ## Install deps with uv (local development)
+# --- Development ---
+setup: ## Install dependencies with uv
 	uv sync
 
-# --- Code quality ---
-lint: ## Check formatting and lint rules
+lint: ## Check lint rules and formatting
 	uv run ruff check .
 	uv run ruff format --check .
 
-format: ## Auto-fix lint errors and format code
+format: ## Fix lint errors and format code
 	uv run ruff check --fix .
 	uv run ruff format .
 
 typecheck: ## Run mypy
 	uv run mypy src
 
-# --- Build and Run ---
 requirements: ## Export requirements.txt from uv.lock
 	uv export --format requirements-txt --no-hashes --no-dev --no-emit-project -o requirements.txt
 
-build: ## Run build.sh (venv + pip, as on merlin)
+# --- Part 1: scraping ---
+build: ## Create .venv with build.sh
 	./build.sh
 
-urls: build ## Collect the product URL sample into urls.txt
+urls: build ## Collect product URLs into urls.txt
 	.venv/bin/python src/get_urls.py > urls.txt
 
-data: build urls ## Scrape every URL in urls.txt into data.tsv
+data: urls ## Scrape every URL into data.tsv
 	.venv/bin/python src/scraper.py < urls.txt > data.tsv
 
-run: build ## Run run.sh (collect URLs, scrape first 10)
+run: build ## Smoke test with run.sh
 	./run.sh
 
-# --- Submission ---
-zip: requirements ## Build the submission archive ($(ZIP_NAME))
-	@for f in $(REQUIRED); do \
-		[ -f "$$f" ] || { echo "Missing required file: $$f" >&2; exit 1; }; \
-	done
-	@rm -f $(ZIP_NAME)
-	@# Not "python3 -m zipfile -c": it drops directories (src/ would be flattened).
-	python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(ZIP_NAME) $(SUBMIT_FILES)
-	@python3 -m zipfile -l $(ZIP_NAME)
+# --- Part 2: analysis ---
+notebooks: ## Run both notebooks, writes the CSVs
+	uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace analysis/eda.ipynb analysis/prep.ipynb
 
-figures: ## Re-run the EDA notebook and export its figures
-	uv run python -m ipykernel install --user --name upa-venv --display-name "UPA project venv"
-	uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=upa-venv analysis/eda.ipynb
+figures: ## Run the EDA notebook and export its figures
+	uv run --with nbconvert jupyter nbconvert --to notebook --execute --inplace analysis/eda.ipynb
 	uv run python analysis/export_figures.py
 
-report: figures docs ## Rebuild the figures and the documentation PDF
-
-docs: ## Build the project-2 documentation PDF
+docs: ## Build docs/documentation.pdf
 	cd docs && pdflatex -interaction=nonstopmode -halt-on-error documentation.tex
 	cd docs && pdflatex -interaction=nonstopmode -halt-on-error documentation.tex
 
-zip2: requirements ## Build the project-2 archive ($(PART2_ZIP))
-	@for f in $(PART2_REQUIRED); do \
-		[ -f "$$f" ] || { echo "Missing required file: $$f" >&2; exit 1; }; \
-	done
-	@rm -f $(PART2_ZIP)
-	@python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(PART2_ZIP) $(PART2_FILES)
-	@python3 -m zipfile -l $(PART2_ZIP)
+report: figures docs ## Refresh figures, then build the PDF
+
+# --- Submission ---
+zip1: FILES = $(PART1)
+zip2: FILES = $(PART2)
+
+zip1: ## Build the part-1 archive
+zip2: ## Build the part-2 archive
+
+zip1 zip2: requirements
+	@for f in $(FILES); do [ -f "$$f" ] || { echo "Missing file: $$f" >&2; exit 1; }; done
+	@rm -f $(ZIP)
+	@# Not "python3 -m zipfile -c", it flattens directories.
+	@python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $(ZIP) $(FILES)
+	@python3 -m zipfile -l $(ZIP)
 
 clean: ## Remove caches and build artifacts
-	rm -rf .pytest_cache .ruff_cache .mypy_cache dist build url_test.txt $(ZIP_NAME) $(PART2_ZIP)
+	rm -rf .pytest_cache .ruff_cache .mypy_cache dist build url_test.txt
 	find . -type d -name __pycache__ -exec rm -rf {} +
